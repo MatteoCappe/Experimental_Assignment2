@@ -1,5 +1,5 @@
 (define (domain rosbot)
-(:requirements :strips :typing :fluents :disjunctive-preconditions :durative-actions)
+(:requirements :typing :durative-actions :numeric-fluents :negative-preconditions :action-costs :conditional-effects :equality :fluents)
 (:types
 	 waypoint 
 	 robot
@@ -11,7 +11,7 @@
  (visited ?wp - waypoint)
  (marker_found ?m - marker)
  (marker_at ?m - marker ?wp - waypoint)
- (completed)
+ (return_home ?wp - waypoint)
 )
 
 (:functions
