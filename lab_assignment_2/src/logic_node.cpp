@@ -11,7 +11,7 @@ int main(int argc, char **argv)
     // Initialize the ROS node
     ros::init(argc, argv, "logic_node");
 
-    sleep(5);
+    sleep(60);
 
     ros::NodeHandle n;
     ros::ServiceClient problem_generation = n.serviceClient<std_srvs::Empty>("/rosplan_problem_interface/problem_generation_server");
@@ -30,7 +30,7 @@ int main(int argc, char **argv)
             {
                 if(dispatcher.call(disp_srv))
                 {
-                
+
                 }
                 else
                 {

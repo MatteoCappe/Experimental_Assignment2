@@ -42,8 +42,8 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 #include <std_msgs/Int32.h>
+#include <std_msgs/Empty.h>
 #include <unistd.h>
-#include <lab_assignment/Marker.h>
 
 class ArucoMarkerPublisher
 {
@@ -65,7 +65,8 @@ private:
   image_transport::Subscriber image_sub_;
   ros::Subscriber search_sub;
 
-  ros::Publisher marker_pub = nh_.advertise<lab_assignment::Marker>("/rosbot/aruco_marker", 1000);
+  ros::Publisher marker_pub = nh_.advertise<std_msgs::Empty>("/rosbot/marker_found", 1);
+  image_transport::Publisher image_pub_;
   //image_transport::Publisher debug_pub_;
 
   cv::Mat inImage_;
@@ -77,7 +78,7 @@ public:
     image_sub_ = it_.subscribe("/camera/color/image_raw", 1, &ArucoMarkerPublisher::image_callback, this);
     search_sub = nh_.subscribe("/rosbot/search_id", 10, &ArucoMarkerPublisher::search_callback, this); //create a sub to get the desired target
     
-    //image_pub_ = it_.advertise("result", 1);
+    image_pub_ = it_.advertise("result", 1);
     //debug_pub_ = it_.advertise("debug", 1);
     
     nh_.param<bool>("use_camera_info", useCamInfo_, false);
@@ -90,7 +91,7 @@ public:
 
   void image_callback(const sensor_msgs::ImageConstPtr& msg)
   {
-    //bool publishImage = image_pub_.getNumSubscribers() > 0;
+    bool publishImage = image_pub_.getNumSubscribers() > 0;
     //bool publishDebug = debug_pub_.getNumSubscribers() > 0;
 
     ros::Time curr_stamp = msg->header.stamp;
@@ -107,45 +108,31 @@ public:
       // ok, let's detect
       mDetector_.detect(inImage_, markers_, camParam_, marker_size_, false);
       
-      lab_assignment::Marker mrk_msg;
-      if(start)
-      {
-      	sleep(6);
-      	mrk_msg.id = -1;
-      	marker_pub.publish(mrk_msg);
-      	start = false;
-      }
+      std_msgs::Empty empty_msg;
 
         for (std::size_t i = 0; i < markers_.size(); ++i)
         {
+        	//only send information about the current target
         	if(markers_.at(i).id == target){
-			mrk_msg.id = markers_.at(i).id;
-			mrk_msg.center.x = markers_.at(i).getCenter().x;
-			mrk_msg.center.y = markers_.at(i).getCenter().y;
-			mrk_msg.area = markers_.at(i).getArea();
-			marker_pub.publish(mrk_msg);
-			
-			std::cout << "Id " << markers_.at(i).id << std::endl;
-			std::cout << "Area " << markers_.at(i).getArea() << std::endl;
-			std::cout << markers_.at(i).getCenter() << std::endl;
+            marker_pub.publish(empty_msg);
         	}
         }
 
       // draw detected markers on the image for visualization
-      //for (std::size_t i = 0; i < markers_.size(); ++i)
-      //{
-        //markers_[i].draw(inImage_, cv::Scalar(0, 0, 255), 2);
-      //}
+      for (std::size_t i = 0; i < markers_.size(); ++i)
+      {
+        markers_[i].draw(inImage_, cv::Scalar(0, 0, 255), 2);
+      }
       // publish input image with markers drawn on it
-      //if (publishImage)
-      //{
+      if (publishImage)
+      {
         // show input with augmented information
-        //cv_bridge::CvImage out_msg;
-        //out_msg.header.stamp = curr_stamp;
-        //out_msg.encoding = sensor_msgs::image_encodings::RGB8;
-        //out_msg.image = inImage_;
-        //image_pub_.publish(out_msg.toImageMsg());
-      //}
+        cv_bridge::CvImage out_msg;
+        out_msg.header.stamp = curr_stamp;
+        out_msg.encoding = sensor_msgs::image_encodings::RGB8;
+        out_msg.image = inImage_;
+        image_pub_.publish(out_msg.toImageMsg());
+      }
 
       // publish image after internal image processing
       //if (publishDebug)

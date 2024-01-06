@@ -7,6 +7,8 @@
 #include <move_base_msgs/MoveBaseGoal.h>
 #include <geometry_msgs/PoseStamped.h>
 
+typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
+
 namespace KCL_rosplan {
 
     MyActionInterface::MyActionInterface(ros::NodeHandle &nh) {
@@ -18,44 +20,58 @@ namespace KCL_rosplan {
         // here the implementation of the action
         std::cout << "Going from " << msg->parameters[1].value << " to " << msg->parameters[2].value << std::endl;
         
-        actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> ac("move_base", true);
+        MoveBaseClient ac("move_base", true);
 
-	    move_base_msgs::MoveBaseAction action;
+	    move_base_msgs::MoveBaseGoal goal;
 
-        ac.waitForServer();
+        while(!ac.waitForServer(ros::Duration(5.0))){
+            ROS_INFO("Waiting for the move_base action server to come up");
+        }
 
-        action.action_goal.goal_id.stamp = ros::Time::now(); 
-        action.action_goal.goal_id.id = "map";
-
-        action.action_goal.goal.target_pose.header.frame_id = "map";
-        action.action_goal.goal.target_pose.header.stamp = ros::Time::now();
+        goal.target_pose.header.frame_id = "map";
+        goal.target_pose.header.stamp = ros::Time::now();
 
         if(msg->parameters[2].value == "wp1"){
-            action.action_goal.goal.target_pose.pose.position.x = 2.0;
-            action.action_goal.goal.target_pose.pose.position.y = 2.0;
+            goal.target_pose.pose.position.x = 6.0;
+            goal.target_pose.pose.position.y = 2.0;
+            goal.target_pose.pose.orientation.w = 1.0;
         }
         else if (msg->parameters[2].value == "wp2"){
-            action.action_goal.goal.target_pose.pose.position.x = 2.0;
-            action.action_goal.goal.target_pose.pose.position.y = 2.0;
+            goal.target_pose.pose.position.x = 7.0;
+            goal.target_pose.pose.position.y = -5.0;
+            goal.target_pose.pose.orientation.w = 1.0;
         }
         else if (msg->parameters[2].value == "wp3"){
-            action.action_goal.goal.target_pose.pose.position.x = 0.0;
-            action.action_goal.goal.target_pose.pose.position.y = 2.0;
+            goal.target_pose.pose.position.x = -3.0;
+            goal.target_pose.pose.position.y = -8.0;
+            goal.target_pose.pose.orientation.w = 1.0;
         }
         else if (msg->parameters[2].value == "wp4"){
-            action.action_goal.goal.target_pose.pose.position.x = 0.0;
-            action.action_goal.goal.target_pose.pose.position.y = -2.0;
+            goal.target_pose.pose.position.x = -7.0;
+            goal.target_pose.pose.position.y = 1.0;
+            goal.target_pose.pose.orientation.w = 1.0;
+        }
+        else if (msg->parameters[2].value == "start"){
+            goal.target_pose.pose.position.x = 0.0;
+            goal.target_pose.pose.position.y = 1.0;
+            goal.target_pose.pose.orientation.w = 1.0;
         }
 
-        action.action_goal.header.stamp = ros::Time::now(); 
-        action.action_goal.header.frame_id = "map";
-
-        ac.sendGoal(action.action_goal.goal);
+        ac.sendGoal(goal);
         ac.waitForResult();
         
         
-        ROS_INFO("Action (%s) performed: completed!", msg->name.c_str());
-        return true;
+        if(ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+        {
+            ROS_INFO("Hooray, the base moved 1 meter forward");
+            return true;
+        }
+        else
+        {
+            ROS_INFO("The base failed to move forward 1 meter for some reason");
+            return false;
+        }
+        
     }
 }
 int main(int argc, char **argv) {
