@@ -2,12 +2,13 @@
 #include <unistd.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
+#include <lab_assignment_2/PlanningAction.h>
 #include <move_base_msgs/MoveBaseAction.h>
 #include <move_base_msgs/MoveBaseActionGoal.h>
 #include <move_base_msgs/MoveBaseGoal.h>
 #include <geometry_msgs/PoseStamped.h>
 
-typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
+
 
 namespace KCL_rosplan {
 
@@ -15,20 +16,15 @@ namespace KCL_rosplan {
     // here the initialization
     }
 
-    bool MyActionInterface::concreteCallback(const rosplan_dispatch_msgs::ActionDispatch::ConstPtr& msg) 
-    {
+    bool MyActionInterface::concreteCallback(const rosplan_dispatch_msgs::ActionDispatch::ConstPtr& msg) {
         // here the implementation of the action
         std::cout << "Going from " << msg->parameters[1].value << " to " << msg->parameters[2].value << std::endl;
         
-        MoveBaseClient ac("move_base", true);
+        actionlib::SimpleActionClient<lab_assignment_2::PlanningAction> ac("reaching_goal", true); //controllare che motion_plan::PlanningAction sia la cartella giusta
+	lab_assignment_2::PlanningGoal goal; //controllare che action::PlanningAction sia la cartella giusta
 
-	    move_base_msgs::MoveBaseGoal goal;
-
-        while(!ac.waitForServer(ros::Duration(5.0))){
-            ROS_INFO("Waiting for the move_base action server to come up");
-        }
-
-        goal.target_pose.header.frame_id = "map";
+        ac.waitForServer();
+	goal.target_pose.header.frame_id  =  "map";
         goal.target_pose.header.stamp = ros::Time::now();
 
         if(msg->parameters[2].value == "wp1"){

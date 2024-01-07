@@ -80,6 +80,7 @@ find_package(catkin REQUIRED COMPONENTS
  add_action_files(
    DIRECTORY action
    FILES FindMarker.action
+   FILES Planning.action
  )
 
 ## Generate added messages and services with any dependencies listed here
@@ -87,6 +88,7 @@ find_package(catkin REQUIRED COMPONENTS
    DEPENDENCIES
    std_msgs
    actionlib_msgs
+   geometry_msgs
  )
 
 ################################################
